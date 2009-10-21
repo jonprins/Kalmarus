@@ -1,6 +1,6 @@
 // Master JS file. NOT multithreaded yet! Will add after basic single-threaded mapreduce is finished
 
-var MapReduce = {};
+var MapReduce = function () {};
 
 MapReduce.prototype = {
 	map : function() {},
