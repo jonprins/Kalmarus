@@ -15,6 +15,9 @@ MapReduce.prototype = {
 	if (typeof map !== "function") {
 	    throw new TypeError("map is not a function");	
 	}
+	else if (map.length !== 1) {
+	    throw new TypeError("map fn should only have one argument");
+	}
 	else {
 	    this.map = map;
 	}

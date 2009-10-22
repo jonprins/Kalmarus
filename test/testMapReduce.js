@@ -7,13 +7,18 @@ testCases(test,
 	      mr = new MapReduce();
 	  },
 	  function testSetMapWithValidArgs() {
-	      var map = function () { var foo = "foo"; };
+	      var map = function (foo) { return "foo"; };
 	      mr.setMap(map);
 	      assert.that(mr.map, eq(map));
 	  },
 	  function testSetMapWithInvalidArg() {
 	      shouldThrowException(function () { mr.setMap("foo");},
-				   "non-fn arg should throw.");
+				   "non-fn arg should throw");
+	  },
+	  function testSetMapWithInvalidMapFn() {
+	      var invalidMap = function(foo,bar) { return 1; };
+	      shouldThrowException(function() { mr.setMap(invalidMap); },
+				   "fn with too many args should throw");
 	  },
 	  function testSetReduceWithValidArg() {
 	      var reduce = function () { var foo = "foo"; };
