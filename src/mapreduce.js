@@ -20,7 +20,7 @@ MapReduce.prototype = {
 	}
     },
     setReduce : function (reduce) {
-	if (typeof map !== "function") {
+	if (typeof reduce !== "function") {
 	    throw new TypeError("reduce is not a function");
 	}
 	else {

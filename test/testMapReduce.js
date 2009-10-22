@@ -11,9 +11,18 @@ testCases(test,
 	      mr.setMap(map);
 	      assert.that(mr.map, eq(map));
 	  },
-	  function testSetMapWithInvalidArgs() {
-	      shouldThrowException(function() { mr.setMap("foo");},
-				   "Invalid args should throw.");
+	  function testSetMapWithInvalidArg() {
+	      shouldThrowException(function () { mr.setMap("foo");},
+				   "non-fn arg should throw.");
+	  },
+	  function testSetReduceWithValidArg() {
+	      var reduce = function () { var foo = "foo"; };
+	      mr.setReduce(reduce);
+	      assert.that(mr.reduce, eq(reduce));
+	  },
+	  function testSetReduceWithInvalidArg() {
+	      shouldThrowException(function () { mr.setReduce("foo"); },
+				   "non-fn arg should throw.");
 	  },
 	  function tearDown() {
 	      mr = null;
