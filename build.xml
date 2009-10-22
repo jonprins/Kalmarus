@@ -42,7 +42,7 @@ rhinoUnitUtilPath="rhinoUnit/rhinoUnitUtil.js">
 
 	<target name="run-js-lint">
 		<jslintant options="{eqeqeq : false, white: false, plusplus : 
-true, 
+false, 
 bitwise : true, passfail: false, browser: true, evil: true, forin: true, newprimitive: true}">
 		    <fileset dir="src"/>
 		</jslintant>

@@ -29,6 +29,13 @@ testCases(test,
 	      shouldThrowException(function () { mr.setReduce("foo"); },
 				   "non-fn arg should throw.");
 	  },
+	  /*
+	  function testStart() {
+	      var map = function (in) { return in+1; };
+	      mr.setMap(map);
+	      mr.setReduce(function(a,b) { return a+b; });
+	      assert.that(mr.start([0,1,2,3,4]), eq(120));
+	      },*/
 	  function tearDown() {
 	      mr = null;
 	  }
