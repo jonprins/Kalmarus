@@ -29,7 +29,6 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 rhinoUnitUtilPath="rhinoUnit/rhinoUnitUtil.js">
 			<fileset dir="test">
 				<include name="*.js"/>
-				<exclude name="standard.js"/>
 			</fileset>
 		</rhinounit>
 	</target>
@@ -42,10 +41,13 @@ rhinoUnitUtilPath="rhinoUnit/rhinoUnitUtil.js">
 	</scriptdef>
 
 	<target name="run-js-lint">
-		<jslintant options="{eqeqeq : false, white: true, plusplus : false, bitwise : true, passfail: false, browser: true, evil: true, forin: true, newprimitive: true}">
+		<jslintant options="{eqeqeq : false, white: false, plusplus : 
+true, 
+bitwise : true, passfail: false, browser: true, evil: true, forin: true, newprimitive: true}">
 		    <fileset dir="src"/>
 		</jslintant>
-		<jslintant options="{eqeqeq : true, white: true, plusplus : false, bitwise : true, evil: true, passfail: false}">
+		<jslintant options="{eqeqeq : true, white: false, plusplus : false, 
+bitwise : true, evil: true, passfail: false}">
 			<fileset dir="test"/>
 		</jslintant>
 	</target>
