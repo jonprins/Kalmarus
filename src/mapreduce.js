@@ -22,6 +22,17 @@ MapReduce.prototype = {
     callback_scope : null,
     maxWorkers : 10,
     startTime : null,
+    intermediate : {},
+    emitIntermediate : function(data) {
+	for(var key in data) {
+	    if(data.hasOwnProperty(key)) {
+		if(!this.intermediate.hasOwnProperty(key)) {
+		    this.intermediate[key] = [];
+		}
+		this.intermediate[key].push(data[key]);
+	    }
+	}    
+    },
     setMap : function (map) {
 	if (typeof map !== "function") {
 	    throw new TypeError("map is not a function");	
