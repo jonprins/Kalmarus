@@ -132,7 +132,7 @@ MapReduceWorker.prototype = {
 
 if (!Array.prototype.reduce) {
     Array.prototype.reduce = function(fun /*, initial*/) {
-	var len = this.length || 0;
+	var len = this.length >>> 0;
 	if (typeof fun != "function") {
 	    throw new TypeError();
 	}
