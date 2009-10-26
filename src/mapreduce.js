@@ -21,6 +21,7 @@ MapReduce.prototype = {
     },
     callback_scope : null,
     maxWorkers : 10,
+    startTime : null,
     setMap : function (map) {
 	if (typeof map !== "function") {
 	    throw new TypeError("map is not a function");	
@@ -40,7 +41,16 @@ MapReduce.prototype = {
 	    this.reduce = reduce;
 	}
     },
-    start : function (data) {
+    singleThreadStart : function (data) {
+	this.startTime = new Date();
+	var intermediateResults = [];
+	for(var i = 0; i < data.length; i++) {
+	    intermediateResults.push(this.map(data[i]));
+	}
+	this.finish(intermediateResults.reduce(this.reduce));
+    },    
+    threadedStart : function (data) {
+	this.startTime = new Date();
 	var intermediateResults = [];
 	
 	var slice = data.length / this.maxWorkers;
@@ -60,7 +70,7 @@ MapReduce.prototype = {
 					     (slice > 1) ?
 					     data.slice(i*slice,
 							(i*slice+slice < data.length) ?
-							i*slice+slice : null
+							i*slice+slice : data.length
 							) : data[i],
 					     this.map,
 					     workerFinished,
@@ -75,7 +85,7 @@ MapReduce.prototype = {
 			   return function() { 
 			       worker.start.call(worker);
 			   };
-		       }(workers[workers.length-1),
+		       }(workers[workers.length-1]),
 		       0
 		       );
 	}
