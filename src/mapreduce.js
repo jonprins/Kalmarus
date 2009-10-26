@@ -71,12 +71,11 @@ MapReduce.prototype = {
 	    activeWorkers++;
 
 	    setTimeout(
-		       function(place) {
+		       function(worker) {
 			   return function() { 
-			       var w = workers[place];
-			       w.start.call(w);
+			       worker.start.call(worker);
 			   };
-		       }(workers.length-1),
+		       }(workers[workers.length-1),
 		       0
 		       );
 	}
