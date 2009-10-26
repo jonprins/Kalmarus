@@ -1,7 +1,7 @@
 // Master JS file. MapReduce object spawns a number of MapReduceWorker objects,
 // whose start method may be called in pseudo-parallel with setTimeout.
 
-var MapReduce = function (map,reduce,numWorkers,callback,callbackScope) {
+function MapReduce (map, reduce, numWorkers, callback, callbackScope) {
     this.setMap(map);
     this.setReduce(reduce);
     this.maxWorkers = numWorkers || 10;
@@ -11,7 +11,7 @@ var MapReduce = function (map,reduce,numWorkers,callback,callbackScope) {
     if(typeof callbackScope == "object") {
 	this.callback_scope = callbackScope;
     }
-};
+}
 
 MapReduce.prototype = {
     map : function () {},
@@ -69,9 +69,7 @@ MapReduce.prototype = {
 	    workers.push(new MapReduceWorker(
 					     (slice > 1) ?
 					     data.slice(i*slice,
-							(i*slice+slice < data.length) ?
-							i*slice+slice : data.length
-							) : data[i],
+							(i*slice+slice < data.length) ? i*slice+slice : data.length ) : data[i],
 					     this.map,
 					     workerFinished,
 					     this
@@ -86,8 +84,7 @@ MapReduce.prototype = {
 			       worker.start.call(worker);
 			   };
 		       }(workers[workers.length-1]),
-		       0
-		       );
+		       0);
 	}
     },
     finish : function (result) {
@@ -102,8 +99,7 @@ MapReduce.prototype = {
 };
 
 
-// empty object for now, will be filled in when MR is actually multithreaded
-var MapReduceWorker = function(data, fn, callback, callbackScope) {
+function MapReduceWorker (data, fn, callback, callbackScope) {
     this.status = 1;
     this.getData = function ( ) { return data; };
     this.getFunction = function ( ) { return fn; };
@@ -115,7 +111,7 @@ var MapReduceWorker = function(data, fn, callback, callbackScope) {
 	    callback(finishedData);
 	}
     };
-};
+}
 
 MapReduceWorker.prototype = {
     status : 0,
