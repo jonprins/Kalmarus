@@ -1,15 +1,23 @@
 // Master JS file. MapReduce object spawns a number of MapReduceWorker objects,
 // whose start method may be called in pseudo-parallel with setTimeout.
 
-var MapReduce = function () {
-
+var MapReduce = function (map,reduce,numWorkers,callback,callbackScope) {
+    this.setMap(map);
+    this.setReduce(reduce);
+    this.maxWorkers = numWorkers || 10;
+    if(typeof callback == "function") {
+	this.callback = callback;
+    }
+    if(typeof callbackScope == "object") {
+	this.callback_scope = callbackScope;
+    }
 };
 
 MapReduce.prototype = {
     map : function () {},
     reduce : function () {},
     callback : function (result ) {
-	alert(result + " ||| you forgot to set your own callback!");
+	throw new Error("You forgot to set a callback function. In the mean time, your result is "+result+".");
     },
     callback_scope : null,
     maxWorkers : 10,
@@ -74,14 +82,12 @@ MapReduce.prototype = {
 	}
     },
     finish : function (result) {
-	console.log(result);
-	/*
-	if (typeof callback_scope == "object") {
+	if (typeof this.callback_scope == "object") {
 	    this.callback.call(this.callback_scope, result);
 	}
 	else {
 	    this.callback(result);
-	    }*/
+	}
 	
     }	
 };
