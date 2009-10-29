@@ -4,7 +4,7 @@
 function MapReduce (map, reduce, numWorkers, callback, callbackScope) {
     this.setMap(map);
     this.setReduce(reduce);
-    this.maxWorkers = numWorkers || 10;
+    this.numWorkers = numWorkers || 10;
     if(typeof callback == "function") {
 	this.callback = callback;
     }
@@ -20,18 +20,26 @@ MapReduce.prototype = {
 	throw new Error("You forgot to set a callback function. In the mean time, your result is "+result+".");
     },
     callback_scope : null,
-    maxWorkers : 10,
+    numWorkers : 10,
     startTime : null,
-    intermediate : {},
+    intermediate : null,
     emitIntermediate : function(data) {
+	var isAtomicData;
 	for(var key in data) {
 	    if(data.hasOwnProperty(key)) {
+		this.intermediate = {};
 		if(!this.intermediate.hasOwnProperty(key)) {
 		    this.intermediate[key] = [];
 		}
 		this.intermediate[key].push(data[key]);
 	    }
 	}    
+	if(null === this.intermediate) {
+	    this.intermediate = [];
+	}
+	if(this.intermediate.constructor == Array) {
+	    this.intermediate.push(data);
+	}	    
     },
     setMap : function (map) {
 	if (typeof map !== "function") {
@@ -52,50 +60,72 @@ MapReduce.prototype = {
 	    this.reduce = reduce;
 	}
     },
-    singleThreadStart : function (data) {
+    Start : function (data) {
 	this.startTime = new Date();
 	var intermediateResults = [];
 	for(var i = 0; i < data.length; i++) {
-	    intermediateResults.push(this.map(data[i]));
+	    this.map(data[i]);
 	}
 	this.finish(intermediateResults.reduce(this.reduce));
     },    
-    threadedStart : function (data) {
-	this.startTime = new Date();
-	var intermediateResults = [];
+    deferredStart : function ( data ) {
+	var workers = [], activeWorkers = 0, dataLeft = data.length, dataQueue = [], i = 0, state = 0;
 	
-	var slice = data.length / this.maxWorkers;
-	var i = 0;
-	var workers = [];
-	var activeWorkers = 0;
-	var workerFinished = function ( data ) {
-	    intermediateResults = intermediateResults.concat ( data );
-	    activeWorkers--;
-	    if(activeWorkers < 1) {
-		this.finish(intermediateResults.reduce(this.reduce));
-	    }
-	};
-	    
-	for(i = 0; i < ((slice > 1) ? this.maxWorkers : data.length); i++) {
-	    workers.push(new MapReduceWorker(
-					     (slice > 1) ?
-					     data.slice(i*slice,
-							(i*slice+slice < data.length) ? i*slice+slice : data.length ) : data[i],
-					     this.map,
-					     workerFinished,
-					     this
-					     )
-			 );	
-	    
-	    activeWorkers++;
 
-	    setTimeout(
-		       function(worker) {
-			   return function() { 
-			       worker.start.call(worker);
-			   };
-		       }(workers[workers.length-1]),
-		       0);
+	function getAvailableWorker ( ) {
+	    for(var i = 0; i < workers.length; i++) {
+		if(workers[i].status) {
+		    return workers[i];
+		}
+	    }
+	}
+
+	function workerCallback ( ) {
+	    activeWorkers-=1;
+	    dataLeft-=1;
+	    if ( dataLeft > 0 ) {	       
+		if(dataQueue.length > 0) {
+		    var d = dataQueue.shift();
+		    getAvailableWorker().start(d.data,d.fn);
+		    activeWorkers+=1;
+		}
+	    }
+	    else {
+		if(this.intermediate.constructor == Array) {
+		    this.finish(this.intermediate.reduce(this.reduce));
+		}
+		else {
+		    var result = null;
+		    for(var k in this.intermediate) {
+			if(this.intermediate.hasOwnProperty(k)) {
+			    if(this.intermediate[k].constructor == Array) {
+				result[k] = this.intermediate[k].reduce(this.reduce);
+			    }
+			    else {
+				result[k] = this.intermediate[k];
+			    }
+			}
+		    }
+		    this.finish(result);
+		}
+	    }
+	}
+
+	function enqueueData ( data, fn ) {
+	    if(activeWorkers < workers.length) {
+		getAvailableWorker().start(data,fn);
+	    }
+	    else {
+		dataQueue.push( { data : data, fn : fn } );
+	    }
+	}
+	 
+	for(i; i < this.numWorkers; i++) {
+	    workers.push(new MapReduceWorker(workerCallback, this, this));
+	}
+
+	for(i = 0; i < data.length; i++) {
+	    enqueueData(data[i], this.map);
 	}
     },
     finish : function (result) {
@@ -105,41 +135,44 @@ MapReduce.prototype = {
 	else {
 	    this.callback(result);
 	}
-	
     }	
 };
 
 
-function MapReduceWorker (data, fn, callback, callbackScope) {
-    this.status = 1;
-    this.getData = function ( ) { return data; };
-    this.getFunction = function ( ) { return fn; };
-    this.callback = function ( finishedData ) {
+function MapReduceWorker ( callback, master, callbackScope ) {
+    this.emitIntermediate = function(intermediate) {
+	master.emitIntermediate(intermediate);
+    };
+    this.callback = function ( ) {
+	this.status = 1;
 	if(typeof callbackScope !== "undefined") {
-	    callback.call(callbackScope, finishedData);
+	    callback.call(callbackScope);
 	}
 	else {
-	    callback(finishedData);
+	    callback();
 	}
     };
 }
 
 MapReduceWorker.prototype = {
-    status : 0,
-    start : function ( ) {
-	this.status = 2;
-	var intermediateData = [];
-	var data = this.getData();
+    status : 1, // available
+    execute : function(data, fn) {
+	this.status = 0; // working
 	if(data.constructor == Array) {
 	    for(var i = 0; i < data.length; i++) {
-		intermediateData.push(this.getFunction()(data[i]));
+		fn.call(this,data[i]); // fn MUST call this.emitIntermediate to send its data up the chain
 	    }
 	}
 	else {
-	    intermediateData = this.getFunction()(data);
+	    fn.call(this,data);
 	}
-	this.status = 0;
-	this.callback(intermediateData);
+	this.callback();
+    },
+    start : function ( data, fn ) {
+	setTimeout(
+		   (function(context) { return function() { context.execute(data,fn);}; })(this), 
+		   0
+		   );
     }
 };
 
